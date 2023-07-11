@@ -52,7 +52,7 @@ public class OrderService {
         for (Order o : findOrderByUserId()
         ) {
             // trong mỗi lần lặp, kiểm tra nếu Id của đơn hàng trùng với id được truyền vào
-            if (o.getUseId() == id) {
+            if (o.getId() == id) {
                 // nếu điều kiện đúng  => tìm thấy đơn hàng có id tương ứng
                 return o; // =< trả về đối tượng Order đó
             }
@@ -81,6 +81,7 @@ public class OrderService {
             // findById(id) => element
             orders.set(orders.indexOf(findById(o.getId())), o);
         }
+        orderDataBase.writeToFile(orders,DataBase.ORDER_PATH);
 
     }
 
@@ -96,6 +97,14 @@ public class OrderService {
         }
         return max + 1;
 
+    }
+    public Order findByIdForAdmin(int id) {
+        for (Order order : orders) {
+            if (order.getId() == id) {
+                return order;
+            }
+        }
+        return null;
     }
 
 

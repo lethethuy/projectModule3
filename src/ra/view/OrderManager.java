@@ -3,6 +3,7 @@ package ra.view;
 import ra.config.Constants;
 import ra.config.InputMethods;
 import ra.config.Message;
+import ra.config.Validation;
 import ra.controller.OrderController;
 import ra.controller.ProductController;
 import ra.controller.UserController;
@@ -26,7 +27,8 @@ public class OrderManager {
                 System.out.println("3. Show order accepted ");
                 System.out.println("4. Show order canceled ");
                 System.out.println("5. Show order detail ");
-                System.out.println("6. Change of status ");
+                System.out.println("6. Cancel order ");
+                System.out.println("7. Change of status ");
                 System.out.println("0. Back ");
                 System.out.println("Enter choice: ");
                 byte choice = InputMethods.getByte();
@@ -36,19 +38,22 @@ public class OrderManager {
                         showAllOrder();
                         break;
                     case 2:
-                        showOrderByCode((byte) 0);
+                        showOrderByCode((byte) 1);
                         break;
                     case 3:
-                        showOrderByCode((byte) 1);
+                        showOrderByCode((byte) 2);
 
                         break;
                     case 4:
-                        showOrderByCode((byte) 2);
+                        showOrderByCode((byte) 3);
                         break;
                     case 5:
                         showOrderDetail();
                         break;
                     case 6:
+                        cancelOrder();
+                        break;
+                    case 7:
                         changeOfStatus();
                         break;
                     case 0:
@@ -79,20 +84,19 @@ public class OrderManager {
                         break;
                     case 2:
                         // chờ xác nhận
-                        showOrderByCode((byte) 0);
-                        break;
-                    case 3:
                         showOrderByCode((byte) 1);
                         break;
-                    case 4:
+                    case 3:
                         showOrderByCode((byte) 2);
+                        break;
+                    case 4:
+                        showOrderByCode((byte) 3);
                         break;
                     case 5:
                         // chi tiết hóa đơn
                         showOrderDetail();
                         break;
                     case 0:
-
                         break;
                     default:
                         System.err.println("Please enter number from 1 to 4");
@@ -106,89 +110,111 @@ public class OrderManager {
     }
 
     public void showAllOrder() {
-        List<Order> orderList = orderController.findOrderByUserId();
+        List<Order> orderList;
+        if (Main.userLogin.getRoles().contains(RoleName.ADMIN)) {
+
+            orderList = orderController.findAll();
+        } else {
+            orderList = orderController.findOrderByUserId();
+        }
         if (orderList.isEmpty()) {
             System.err.println("Empty");
             return;
         }
-        for (Order order : orderList) {
-            System.out.println(order);
+        if (Main.userLogin.getRoles().contains(RoleName.ADMIN)) {
+            for (Order order : orderList) {
+                UserController userController = new UserController();
+                User orderUser = userController.findById(order.getUseId());
+                orderAdmin(order, orderUser);
+            }
+        } else {
+            for (Order order : orderList) {
+                System.out.println(order);
+            }
         }
     }
 
     public void showOrderByCode(byte code) {
-        orderController = new OrderController();
-        // gọi phương thức findOrdeByUserId() để lấy danh sách các đơn hàng của user thông qua UserId
-        List<Order> orders = orderController.findOrderByUserId();
-
-        // Khởi tạo một danh sách mới tên là filter để lưu trữ các đơn hàng được chọn lọc thông qua code
+        List<Order> orderList;
+        if(Main.userLogin.getRoles().contains(RoleName.ADMIN)){
+            orderList = orderController.findAll();
+        } else {
+            orderList = orderController.findOrderByUserId();
+        }
         List<Order> filter = new ArrayList<>();
-        //  Dùng vòng lặp for để duyệt qua từng đơn hàng của user thông qua code
-        // nếu status của order đó == với code của mình truyền vào thì add nó vào filter
-        for (Order o : orders
-        ) {
-            if (o.getStatus() == code) {
-                filter.add(o);
+        for (Order order : orderList) {
+            if (order.getStatus() == code) {
+                filter.add(order);
             }
         }
-
-        // sau khi kết thúc vòng lặp, nếu danh sách fillter rỗng
-        // -> in ra thông báo rỗng và dừng chương trình
         if (filter.isEmpty()) {
-            System.err.println("Order is empty");
+            System.out.println("Empty");
             return;
         }
-        // Nếu danh sach không rỗng, nó lặp qua mỗi đơn hàng trong danh sách filter và
-        // in ra thông tin của đơn hàng.
-        for (Order o : filter
-        ) {
-            System.out.println(o);
+        if(Main.userLogin.getRoles().contains(RoleName.ADMIN)){
+            for (Order order : filter) {
+                UserController userController = new UserController();
+                User orderUser = userController.findById(order.getUseId());
+                orderAdmin(order,orderUser);
+            }
+        }
+        else {
+            for (Order order : filter) {
+                System.out.println(order);
+            }
         }
     }
 
     public void showOrderDetail() {
-        // Yêu cầu người dùng nhâp id đơn hàng
-        System.out.println("Enter order ID");
-        int orderId = InputMethods.getInteger();
-        // tìm đơn hàng tương ứng bằng id tương ứng và phương thức findById
-        Order order = orderController.findById(orderId);
-        // Nếu order bằng null -> không có sản phẩm, thì in ra thông báo lỗi
-        if (order == null) {
-            System.err.println(Constants.NOT_FOUND);
+        List<Order> orderList;
+        if(Main.userLogin.getRoles().contains(RoleName.ADMIN)){
+            orderList = orderController.findAll();
+        } else {
+            orderList = orderController.findOrderByUserId();
+        }
+        List<Order> filter = new ArrayList<>();
+        for (Order order : orderList) {
+            if (order.getStatus() == 2) {
+                filter.add(order);
+            }
+        }
+        if(filter.isEmpty()){
+            System.out.println("Empty");
             return;
         }
 
-        // Nếu hoá đơn không rỗng, in ra chi tiet hoa don
-        System.out.printf("---------------------OrderDetail-----------------------\n");
-        System.out.printf("                    Id:%5d                              \n", order.getId());
-        System.out.println("--------------------Infomation--------------------------");
-        System.out.println("Receiver: " + order.getReceiver() + "| Phone : " + order.getPhoneNumber() + "\n");
-        System.out.println("Address : " + order.getAddress());
-        System.out.println("---------------------Detail--------------------------");
-        for (CartItem ci : order.getOrderDetail()
-        ) {
-            System.out.println(ci);
-        }
-        System.out.println("Total : " + order.getTotalPrice());
-        System.out.println("---------------------END------------------");
-        if (order.getStatus() == 0) {
-            System.out.println("Do you want to cancel this order?");
-            System.out.println("1. yes");
-            System.out.println("2. no");
-            System.out.println("Enter your choice");
-            int choice = InputMethods.getByte();
-            if (choice == 1) {
-                // huỷ
-                order.setStatus((byte) 2);
-                orderController.save(order);
+        if(Main.userLogin.getRoles().contains(RoleName.ADMIN)){
+            for (Order order : filter) {
+                UserController userController = new UserController();
+                User orderUser = userController.findById(order.getUseId());
+                orderAdmin(order, orderUser);
+            }
+        }else {
+            for (Order order : filter) {
+                System.out.println("\n");
+                System.out.printf("----------Invoice----------\n");
+                System.out.printf("          Id:%5d                   \n", order.getId());
+                System.out.printf("          Date:%15s                  \n", order.getBuyDate());
+                System.out.println("          Infomation                   ");
+                System.out.printf("Receiver: " + order.getReceiver() + " | Phone: " + order.getPhoneNumber() + "\n");
+                System.out.println("Address " + order.getAddress());
+                System.out.println("----------Detail----------");
+                for (CartItem item : order.getOrderDetail()) {
+                    System.out.println(item);
+                }
+                System.out.println("Total: " + Validation.formatPrice(order.getTotalPrice()));
+                System.out.println("--------Thank you---------");
             }
         }
+
 
     }
 
     public void orderAdmin(Order order, User orderUser) {
         System.out.println("=======================");
         System.out.println("ID: " + order.getId() + " | Date: " + order.getBuyDate());
+        System.out.println("Detail: " +
+                order.getOrderDetail().toString().replace(", ", "\n").replace("[", "\n").replace("]", "\n").replace("ID: ", ""));
         System.out.println("Total: " + order.getTotalPrice() + " | Status: " + Message.getStatusByCode(order.getStatus()));
         System.out.println("Receiver: " + order.getReceiver());
         System.out.println("Phone number: " + order.getPhoneNumber());
@@ -198,7 +224,8 @@ public class OrderManager {
     public void changeOfStatus() {
         System.out.println("Enter order ID: ");
         int changeOrderStatusId = InputMethods.getInteger();
-        Order changeOrderStatus = orderController.findById(changeOrderStatusId);
+        Order changeOrderStatus = orderController.findByIdForAdmin(changeOrderStatusId);
+
         if (changeOrderStatus == null) {
             System.err.println(Constants.NOT_FOUND);
             return;
@@ -221,7 +248,8 @@ public class OrderManager {
                 changeOrderStatus.setStatus((byte) 2);
                 orderController.save(changeOrderStatus);
                 System.out.println(Constants.SUCCESS);
-            } else if (choice == 2) {
+            }
+            else if (choice==2){
                 changeOrderStatus.setStatus((byte) 3);
                 for (CartItem item : changeOrderStatus.getOrderDetail()) {
                     ProductController productController = new ProductController();
@@ -232,7 +260,38 @@ public class OrderManager {
                 orderController.save(changeOrderStatus);
                 System.out.println(Constants.SUCCESS);
             } else {
-                System.err.println("Please enter from 1 to 3");
+                System.err.println("Invalid format! Please try again....");
+            }
+        }
+    }
+    public void cancelOrder() {
+        System.out.println("Enter order ID: ");
+        int cancelOrderId = InputMethods.getInteger();
+        Order order = orderController.findById(cancelOrderId);
+        if (order == null) {
+            System.err.println(Constants.NOT_FOUND);
+            return;
+        }
+        if (order.getStatus() == 3) {
+            System.err.println("This order has been canceled");
+            return;
+        }
+        if (order.getStatus() == 1) {
+            System.out.println("Are you sure want to cancel ?");
+            System.out.println("1.Yes");
+            System.out.println("2.No");
+            System.out.println("Enter your choice: ");
+            int choice = InputMethods.getInteger();
+            if (choice == 1) {
+                order.setStatus((byte) 3);
+                for (CartItem item : order.getOrderDetail()) {
+                    ProductController productController = new ProductController();
+                    Product product = productController.findById(item.getProduct().getProductId());
+                    product.setStock(product.getStock() + item.getQuantity());
+                    productController.save(product);
+                }
+                orderController.save(order);
+                System.out.println(Constants.SUCCESS);
             }
         }
     }

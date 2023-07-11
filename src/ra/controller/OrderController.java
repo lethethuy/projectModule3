@@ -33,4 +33,10 @@ public class OrderController {
         return orderService.findOrderByUserId();
     }
 
+    public Order findByIdForAdmin(int id) {
+        return orderService.findByIdForAdmin(id);
+    }
+
+
+
 }

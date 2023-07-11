@@ -2,11 +2,12 @@ package ra.model;
 
 import ra.config.Message;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-public class    Order {
+public class  Order implements Serializable {
     private int id;
     private int useId;
     private double totalPrice;
@@ -105,6 +106,6 @@ public class    Order {
 
     @Override
     public String toString() {
-        return "ID : " + id + " | Name : " + receiver + " | Total: " + totalPrice + " | Date : " + buyDate + " | Status: " + Message.getStatusByCode(status);
+        return "ID : " + id + " | Name : " + receiver.toString() + " | Total: " + totalPrice + " | Date : " + buyDate + " | Status: " + Message.getStatusByCode(status);
     }
 }

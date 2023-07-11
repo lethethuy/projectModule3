@@ -3,6 +3,7 @@ package ra.config;
 import java.util.Scanner;
 
 public class InputMethods {
+
     private static final String ERROR_ALERT = "===>> Định dạng không hợp lệ, hoặc ngoài phạm vi! Vui lòng thử lại....";
     private static final String EMPTY_ALERT = "===>> Trường nhập vào không thể để trống! Vui lòng thử lại....";
     /*========================================Input Method Start========================================*/
